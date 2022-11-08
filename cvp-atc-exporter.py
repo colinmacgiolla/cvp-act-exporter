@@ -32,6 +32,19 @@ GENERATE_GENERIC = True
 
 
 class ipGenerator():
+   '''
+   ipGenerator - act as a provider of IP addresses
+   The pool is created and then the # of reserved IPs is deleted from the pool
+
+      Parameters;
+         subnet (str): The IP Subnet that we have been allocated
+         num_reserved (int): The number of IPs from the start of the pool that we should assume in use
+
+      Methods:
+         get(): Get an un-allocated IP
+         put(str): Put an IP back in the pool
+   
+   '''
    def __init__(self,subnet="192.168.0.0/24",num_reserved=5):
       self.ip_block = [str(ip) for ip in ipaddress.IPv4Network(subnet)]
       self.ip_block.reverse()
@@ -49,7 +62,7 @@ class ipGenerator():
 
 def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
    '''
-   Build a list of EOS nodes, based on the inputs
+   build_node_list - Build a list of EOS nodes, based on the inputs
 
       Parameters;
          inventory (list): CVP inventory output - a list of dicts containing the standard CVP inventory
@@ -93,6 +106,21 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
 
 
 def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
+   '''
+   generate_edges - generate a list of the links in the topology
+
+      Parameters;
+         raw_topology (dict): the cvp API call response with the topology
+         serials (dict): the generated lookup table of serials : hostnames
+         mgmt_ip (ipGenerator): the instance of the ipGenerator for the management pool
+         log(logging): logging instance
+         blackkist(list(str)): list of nodes that are in the CVP inventory, but whose presence we don't need to infer
+      
+      Returns:
+         edgeSet(list): A list of neighbors with the link information
+         extra_nodes(list): A list of generic nodes that are inferred from the link information
+   
+   '''
    edgeSet = {}
    extra_nodes = []
    node = {}
