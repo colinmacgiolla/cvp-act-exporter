@@ -16,7 +16,7 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
-import logging, time, sys
+import logging, time, sys, argparse
 from cvprac.cvp_client import CvpClient
 import urllib3
 urllib3.disable_warnings()
@@ -24,6 +24,7 @@ import json
 from copy import deepcopy
 import ipaddress
 import yaml
+from getpass import getpass
 
 TEST_MODE = True
 EXPORT_CVP_DATA = True
@@ -149,6 +150,23 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    return edgeSet, extra_nodes
 
 
+def build_output(cvp_version):
+   output_data = {}
+   output_data['cvp'] = {}
+   output_data['cvp']['username'] = 'root'
+   output_data['cvp']['password'] = 'cvproot'
+   output_data['cvp']['version'] = cvp_version
+   output_data['cvp']['instance'] = 'singleinstance'
+   
+   
+   output_data['generic'] = {}
+   output_data['generic']['version'] = 'CentOS-8-8.2.2004'
+   output_data['generic']['username'] = 'ansible'
+   output_data['generic']['password'] = 'ansible'
+
+   return output_data
+
+
 def main():
    
    timestamp = time.strftime("%Y%m%d-%H%M")
@@ -168,12 +186,49 @@ def main():
 
    mainLogger.info('Script started')
 
+   mainLogger.debug('Processing input arguments')
+   parser = argparse.ArgumentParser(prog='CVP to ATC Exporter',
+      description='This script exports the nodes, links and version information from CVP into a YAML file for import to Arista Cloud Test')
 
+   parser.add_argument('-t','--test', action='store_true', default=False, 
+      help='If --test is set, we will not connect to CVP but instead try and use local json files as our source data. Disabled by default.')
+   parser.add_argument('--export', action='store_true', default=False, 
+      help='Store the responses from CVP as json data locally, for later testing. Disabled by default.')
+   parser.add_argument('-o', '--output', default='generated_act_topology.yaml', 
+      help='Output file name, default is: generated_act_topology.yaml',dest='output_file')
+   parser.add_argument('--streaming', action='store_true', default=False, 
+      help='Only add nodes that are actively streaming from the CVP inventory. Any nodes (and their links) that are not streaming, will not be created. Disabled by default.')
+   parser.add_argument('--create-generic', action='store_true', default=True, 
+      help='If there are non-CVP nodes whose presence is inferred from the link data, create them as generic linux hosts. *Enabled* by default')
+   parser_group = parser.add_mutually_exclusive_group(required=True)
+   parser_group.add_argument('-u', '--username', help='username if using on-prem user accounts',dest='username')
+   parser_group.add_argument('--token', help='API token, required if on CVaaS', dest='token')
+   parser.add_argument('--cvp', action='append', required=True, help='Hostname(s) or IP(s) of the CVP instance to connect to')
+   parser.add_argument('-p', '--password', dest='password', default=None, help='Password for connecting to CVP, when not using API tokens')
+
+   args = parser.parse_args()
+
+
+   # Set global flags
+   global TEST_MODE
+   TEST_MODE = args.test
+   global EXPORT_CVP_DATA
+   EXPORT_CVP_DATA = args.export
+   global GENERATE_GENERIC
+   GENERATE_GENERIC = args.create_generic
+
+   if args.token is None:
+      if 'password' is None:
+         args.password = getpass(prompt='Please enter CVP password: ')
 
    if TEST_MODE is False:
       mainLogger.info('Attempting to connect to CVP')
       client = CvpClient()
-      client.connect(['10.83.13.33'], 'cvpadmin', 'arastra')
+      if args.token is not None:
+         client.connect(args.cvp, username='', password='', is_cvaas=True, api_token=args.token)
+      else:
+         client.connect(args.cvp, args.username, args.password)
+
       mainLogger.info('Collecting CVP info')
       cvp_info = client.api.get_cvp_info()
       mainLogger.info('Collecting device inventory')
@@ -212,7 +267,7 @@ def main():
    mgmt_ip_block = ipGenerator()
 
    mainLogger.info("Building node list, and mapping hostname to serial numbers")
-   nodes,serialTable,blacklist = build_node_list(inventory, mgmt_ip_block, mainLogger)
+   nodes,serialTable,blacklist = build_node_list(inventory, mgmt_ip_block, mainLogger, streaming_active=args.streaming)
    mainLogger.info("Successfully mapped %d nodes, and %d serial numbers", len(nodes), len(serialTable))
 
    mainLogger.info("Mapping links")
@@ -221,18 +276,8 @@ def main():
 
    mainLogger.info("Building final datastructure")
    mainLogger.debug("Creating CVP header")
-   output_data = {}
-   output_data['cvp'] = {}
-   output_data['cvp']['username'] = 'root'
-   output_data['cvp']['password'] = 'cvproot'
-   output_data['cvp']['version'] = cvp_info['version']
-   output_data['cvp']['instance'] = 'singleinstance'
-   
-   mainLogger.debug("Creating generic header")
-   output_data['generic'] = {}
-   output_data['generic']['version'] = 'CentOS-8-8.2.2004'
-   output_data['generic']['username'] = 'ansible'
-   output_data['generic']['password'] = 'ansible'
+   output_data = build_output(cvp_info['version'])
+
 
    mainLogger.debug("Populating node list")
    output_data['nodes'] = deepcopy(nodes)
@@ -250,7 +295,7 @@ def main():
             mainLogger.debug('%s has no links that we can find', node)
 
    mainLogger.info('Writing output yaml')
-   with open('generated_act_topology.yaml','w') as output_file:
+   with open(args.output_file,'w') as output_file:
       temp = yaml.safe_dump(output_data, output_file, sort_keys=False)
    mainLogger.info('Export completed')
 
