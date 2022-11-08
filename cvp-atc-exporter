@@ -218,7 +218,7 @@ def main():
    GENERATE_GENERIC = args.create_generic
 
    if args.token is None:
-      if 'password' is None:
+      if args.password is None:
          args.password = getpass(prompt='Please enter CVP password: ')
 
    if TEST_MODE is False:
