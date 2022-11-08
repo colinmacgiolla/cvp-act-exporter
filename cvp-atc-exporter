@@ -40,13 +40,25 @@ class ipGenerator():
 
    def get(self):
       return self.ip_block.pop()
+   
+   def put(self, ip):
+      self.ip_block.append(ip)
 
 
 
 def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
    '''
    Build a list of EOS nodes, based on the inputs
-      Parameters
+
+      Parameters;
+         inventory (list): CVP inventory output - a list of dicts containing the standard CVP inventory
+         mgmt_ip (ipGenerator): An instance of the ipGenerator class to provide the updated management IPs
+         log (logging): Instance of the logger
+         streaming_active (bool): Filter out any nodes that aren't actively streaming. Non CVP nodes will still be 
+            generated as generic types if the topology requires it
+
+      Returns:
+         A list of nodes, a dict of structure {serial:hostname}, and a list of EOS nodes not currently streaming
    '''
    nodeList = []
    serialTable = {}
@@ -65,6 +77,7 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
       if streaming_active is True:
          if entry['streamingStatus'] != 'active':
             log.warning('Not creating %s as is not currently streaming', entry['hostname'])
+            mgmt_ip.put(node[ entry['hostname'] ]['ip_addr'])
             blacklist.append(entry['hostname'])
          else:
             log.debug('Creating node: %s', entry['hostname'])
