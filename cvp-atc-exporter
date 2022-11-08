@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (c) 2021 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2022 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -55,7 +55,7 @@ def build_node_list(inventory, log, streaming_active=False):
          if entry['streamingStatus'] != 'active':
             log.warning('Not creating %s as is not currently streaming', entry['hostname'])
          else:
-            log.info('Creating node: %s', entry['hostname'])
+            log.debug('Creating node: %s', entry['hostname'])
             nodeList.append(deepcopy(node))
       else:
          nodeList.append(deepcopy(node))
@@ -84,7 +84,7 @@ def generate_edges(raw_topology, serials, log):
             # Nothing to do, generic node already created
             pass
          else:
-            log.info('Creating extra node for %s' % data[0])
+            log.debug('Creating generic node for %s' % data[0])
             
             node[local_hostname] = {}
             node[local_hostname]['ip_addr'] = "Unknown"
@@ -102,7 +102,7 @@ def generate_edges(raw_topology, serials, log):
                pass
             else:
                log.debug('Remote edge found before remote node creation %s %s - %s %s' % (data[0], data[1], data[2], data[3]))
-               log.info("Creating node: %s" % data[2])
+               log.debug("Creating generic node: %s" % data[2])
                remote_hostname = data[2]
                node[remote_hostname] = {}
                node[remote_hostname]['ip_addr'] = "Unknown"
@@ -122,12 +122,12 @@ def generate_edges(raw_topology, serials, log):
 def main():
    
    timestamp = time.strftime("%Y%m%d-%H%M")
-   logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+   logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
    mainLogger = logging.getLogger('cvp-atc-exporter')
    # We append to the log if it already exists, if not create the file
    fh = logging.FileHandler('cvp-atc-exporter'+timestamp+'.log', mode='a+')
    # Set the log level going to the file
-   fh.setLevel(logging.INFO)
+   fh.setLevel(logging.DEBUG)
    fh.setFormatter(logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
    mainLogger.addHandler(fh)
    ch = logging.StreamHandler(sys.stdout)
