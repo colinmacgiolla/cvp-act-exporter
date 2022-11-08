@@ -1,0 +1,124 @@
+#!/usr/bin/python
+# Copyright (c) 2021 Arista Networks, Inc.  All rights reserved.
+# Arista Networks, Inc. Confidential and Proprietary.
+
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice,  this list of conditions and the following disclaimer in the documentation 
+#   and/or other materials provided with the distribution.
+# * Neither the name of the Arista nor the names of its contributors may be used to endorse or promote products derived from this software without 
+#   specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+# DAMAGE.
+
+import logging, time, sys
+from cvprac.cvp_client import CvpClient
+import urllib3
+urllib3.disable_warnings()
+import json
+from copy import deepcopy
+import ipaddress
+
+TEST_MODE = True
+EXPORT_CVP_DATA = True
+
+
+def build_node_list(inventory):
+   nodeList = []
+   
+   ip_block = [str(ip) for ip in ipaddress.IPv4Network('192.168.0.0/24')]
+   ip_block.reverse()
+
+   # No idea what are reserved yet
+   for x in range(6):
+      ip_block.pop()
+
+
+   node = {}
+   for entry in inventory:
+      node[ entry['hostname'] ] = {}
+      node[ entry['hostname'] ]['ip_addr'] = ip_block.pop()
+      node[ entry['hostname'] ]['node_type'] = 'veos'
+      node[ entry['hostname'] ]['version'] = entry['version']
+      node[ entry['hostname'] ]['neighbors'] = []
+
+      nodeList.append(deepcopy(node))
+      node.clear()
+
+
+
+   return nodeList
+
+
+def main():
+   
+   timestamp = time.strftime("%Y%m%d-%H%M%S")
+   logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+   mainLogger = logging.getLogger('cvp-atc-exporter')
+   # We append to the log if it already exists, if not create the file
+   fh = logging.FileHandler('cvp-atc-exporter'+timestamp+'.log', mode='a+')
+   # Set the log level going to the file
+   fh.setLevel(logging.INFO)
+   fh.setFormatter(logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+   mainLogger.addHandler(fh)
+   ch = logging.StreamHandler(sys.stdout)
+   ch.setLevel(logging.INFO)
+   ch.setFormatter(logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+   mainLogger.addHandler(ch)
+   mainLogger.propagate = False
+
+   mainLogger.info('Script started')
+
+   mainLogger.info('Attempting to connect to CVP')
+   client = CvpClient()
+   client.connect(['10.83.13.33'], 'cvpadmin', 'arastra')
+
+   if TEST_MODE is False:
+      mainLogger.info('Collecting CVP info')
+      cvp_info = client.api.get_cvp_info()
+      mainLogger.info('Collecting device inventory')
+      inventory = client.api.get_inventory()
+      mainLogger.info('Collecting link topologies')
+      raw_topology = client.get('/api/v1/rest/analytics/network/v1/connections/links')
+
+      if EXPORT_CVP_DATA is True:
+         mainLogger.info('Exporting collected data to json')
+         json_object = json.dumps(cvp_info,indent=4)
+         with open('cvp.json','w') as outfile:
+            outfile.write(json_object)
+
+         json_object = json.dumps(inventory,indent=4)
+         with open('inventory.json','w') as outfile:
+            outfile.write(json_object)
+
+         json_object = json.dumps(raw_topology,indent=4)
+         with open('topology.json','w') as outfile:
+            outfile.write(json_object)
+
+   else:
+      mainLogger.info('Running in test mode... Loading local files...')
+      with open('cvp.json','r') as openfile:
+         cvp_info = json.load(openfile)
+      with open('inventory.json','r') as openfile:
+         inventory = json.load(openfile)
+      with open('topology.json','r') as openfile:
+         raw_topology = json.load(openfile)         
+
+
+   nodes = build_node_list(inventory)
+   print('READY')
+
+
+
+
+
+   return 0
+
+
+if __name__ == "__main__":
+   main()
