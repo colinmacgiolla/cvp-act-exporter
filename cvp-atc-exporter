@@ -27,25 +27,31 @@ import yaml
 
 TEST_MODE = True
 EXPORT_CVP_DATA = True
-GENERATE_GENERIC = False
+GENERATE_GENERIC = True
 
-def build_node_list(inventory, log, streaming_active=False):
+
+class ipGenerator():
+   def __init__(self,subnet="192.168.0.0/24",num_reserved=5):
+      self.ip_block = [str(ip) for ip in ipaddress.IPv4Network(subnet)]
+      self.ip_block.reverse()
+
+      for x in range(num_reserved+1):
+         self.ip_block.pop()
+
+   def get(self):
+      return self.ip_block.pop()
+
+
+
+def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
    nodeList = []
    serialTable = {}
    
-   ip_block = [str(ip) for ip in ipaddress.IPv4Network('192.168.0.0/24')]
-   ip_block.reverse()
-
-   # No idea what are reserved yet
-   for x in range(6):
-      ip_block.pop()
-
-
    node = {}
    for entry in inventory:
       log.debug('Processing %s', entry['hostname'])
       node[ entry['hostname'] ] = {}
-      node[ entry['hostname'] ]['ip_addr'] = ip_block.pop()
+      node[ entry['hostname'] ]['ip_addr'] = mgmt_ip.get()
       node[ entry['hostname'] ]['node_type'] = 'veos'
       node[ entry['hostname'] ]['version'] = entry['version']
       node[ entry['hostname'] ]['neighbors'] = []
@@ -66,7 +72,7 @@ def build_node_list(inventory, log, streaming_active=False):
    return nodeList,serialTable
 
 
-def generate_edges(raw_topology, serials, log):
+def generate_edges(raw_topology, serials, mgmt_ip, log):
    edgeSet = {}
    extra_nodes = []
    node = {}
@@ -87,7 +93,7 @@ def generate_edges(raw_topology, serials, log):
             log.debug('Creating generic node for %s' % data[0])
             
             node[local_hostname] = {}
-            node[local_hostname]['ip_addr'] = "Unknown"
+            node[local_hostname]['ip_addr'] = mgmt_ip.get()
             node[local_hostname]['node_type'] = 'generic'
             node[local_hostname]['neighbors'] = []
             extra_nodes.append(deepcopy(node))
@@ -105,7 +111,7 @@ def generate_edges(raw_topology, serials, log):
                log.debug("Creating generic node: %s" % data[2])
                remote_hostname = data[2]
                node[remote_hostname] = {}
-               node[remote_hostname]['ip_addr'] = "Unknown"
+               node[remote_hostname]['ip_addr'] = mgmt_ip.get()
                node[remote_hostname]['node_type'] = 'generic'
                node[remote_hostname]['neighbors'] = []
                extra_nodes.append(deepcopy(node))
@@ -179,12 +185,14 @@ def main():
          return 1
 
 
+   mgmt_ip_block = ipGenerator()
+
    mainLogger.info("Building node list, and mapping hostname to serial numbers")
-   nodes,serialTable = build_node_list(inventory, mainLogger)
+   nodes,serialTable = build_node_list(inventory, mgmt_ip_block, mainLogger)
    mainLogger.info("Successfully mapped %d nodes, and %d serial numbers", len(nodes), len(serialTable))
 
    mainLogger.info("Mapping links")
-   edgeList, genericNodes = generate_edges(raw_topology,serialTable, mainLogger)
+   edgeList, genericNodes = generate_edges(raw_topology,serialTable, mgmt_ip_block, mainLogger)
    mainLogger.info("Successfully mapped %d links, and found %d generic/not-in-inventory nodes", len(edgeList), len(genericNodes))
 
    mainLogger.info("Building final datastructure")
@@ -206,7 +214,7 @@ def main():
    output_data['nodes'] = deepcopy(nodes)
    if GENERATE_GENERIC is True:
       mainLogger.info("Adding generic nodes to inventory")
-      output_data['nodes'].append( deepcopy(genericNodes))
+      output_data['nodes'].extend( deepcopy(genericNodes))
 
    mainLogger.debug("Adding links to inventory")
 
