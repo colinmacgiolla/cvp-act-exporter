@@ -30,7 +30,42 @@ Script arguments:
                         Password for connecting to CVP, when not using API tokens
 ```
 
+### Sample Output
+```yaml
+cvp:
+  username: root
+  password: cvproot
+  version: 2021.3.1
+  instance: singleinstance
 
+generic:
+  version: CentOS-8-8.2.2004
+  username: ansible
+  password: ansible
+
+nodes:
+- do398:
+    ip_addr: 192.168.0.7
+    node_type: veos
+    version: 4.28.1F
+    neighbors: []
+- hs319:
+    ip_addr: 192.168.0.8
+    node_type: veos
+    version: 4.25.6M
+    neighbors:
+    - neighborDevice: AVD-LEAF3A
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: AVD-LEAF3A
+      neighborPort: Ethernet2
+      port: Ethernet2
+- ld357:
+    ip_addr: 192.168.0.9
+    node_type: veos
+    version: 4.23.6M
+    neighbors: []
+```
 
 ## Caveats (READ THIS SECTION)
 * The management IPs are updated to match the pool required within Arista Test Cloud [ATC] (192.168.0.0/24)
