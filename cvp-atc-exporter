@@ -26,10 +26,11 @@ import ipaddress
 
 TEST_MODE = True
 EXPORT_CVP_DATA = True
-
+GENERATE_GENERIC = False
 
 def build_node_list(inventory):
    nodeList = []
+   serialTable = {}
    
    ip_block = [str(ip) for ip in ipaddress.IPv4Network('192.168.0.0/24')]
    ip_block.reverse()
@@ -50,9 +51,62 @@ def build_node_list(inventory):
       nodeList.append(deepcopy(node))
       node.clear()
 
+      serialTable[ entry['serialNumber'] ] = entry['hostname']
+
+   return nodeList,serialTable
 
 
-   return nodeList
+def generate_edges(raw_topology, serials):
+   edgeSet = {}
+   extra_nodes = []
+   node = {}
+
+   for notification in raw_topology['notifications']:
+      for entry in notification['updates']:
+
+         # Assume this to be local serial,local interface, remote serial, remote port
+         data = entry.split(',')
+
+         local_hostname = data[0]
+         if local_hostname in serials:
+            local_hostname = serials[data[0]]
+         elif any(remote_hostname in x for x in extra_nodes):
+            # Nothing to do, generic node already created
+            pass
+         else:
+            print('Creating extra node for %s' % data[0])
+            
+            node[local_hostname] = {}
+            node[local_hostname]['ip_addr'] = "Unknown"
+            node[local_hostname]['node_type'] = 'generic'
+            node[local_hostname]['neighbors'] = []
+            extra_nodes.append(deepcopy(node))
+            node.clear()
+
+         remote_hostname = data[2]
+         if remote_hostname in serials:
+            remote_hostname = serials[data[2]]
+         else:
+            if any(remote_hostname in x for x in extra_nodes):
+               # generic node has already been created
+               pass
+            else:
+               print('Remote edge found before remote node creation %s %s - %s %s' % (data[0], data[1], data[2], data[3]))
+               print("Creating node: %s" % data[2])
+               remote_hostname = data[2]
+               node[remote_hostname] = {}
+               node[remote_hostname]['ip_addr'] = "Unknown"
+               node[remote_hostname]['node_type'] = 'generic'
+               node[remote_hostname]['neighbors'] = []
+               extra_nodes.append(deepcopy(node))
+               node.clear()
+
+         if local_hostname not in edgeSet:
+            edgeSet[local_hostname] = []
+
+         edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':data[3],'port':data[1]  }   )
+
+   return edgeSet, extra_nodes
 
 
 def main():
@@ -110,7 +164,44 @@ def main():
          raw_topology = json.load(openfile)         
 
 
-   nodes = build_node_list(inventory)
+   mainLogger.info("Building node list, and mapping hostname to serial numbers")
+   nodes,serialTable = build_node_list(inventory)
+   mainLogger.info("Successfully mapped %d nodes, and %d serial numbers", len(nodes), len(serialTable))
+
+   mainLogger.info("Mapping links")
+   edgeList, genericNodes = generate_edges(raw_topology,serialTable)
+   mainLogger.info("Successfully mapped %d links, and found %d generic/not-in-inventory nodes", len(edgeList), len(genericNodes))
+
+   mainLogger.info("Building final datastructure")
+   mainLogger.debug("Creating CVP header")
+   output_data = {}
+   output_data['cvp'] = {}
+   output_data['cvp']['username'] = 'root'
+   output_data['cvp']['password'] = 'cvproot'
+   output_data['cvp']['version'] = cvp_info['version']
+   output_data['cvp']['instance'] = 'singleinstance'
+   
+   mainLogger.debug("Creating generic header")
+   output_data['generic'] = {}
+   output_data['generic']['version'] = 'CentOS-8-8.2.2004'
+   output_data['generic']['username'] = 'ansible'
+   output_data['generic']['password'] = 'ansible'
+
+   mainLogger.debug("Populating node list")
+   output_data['nodes'] = deepcopy(nodes)
+   if GENERATE_GENERIC is True:
+      mainLogger.info("Adding generic nodes to inventory")
+      output_data['nodes'].append( deepcopy(genericNodes))
+
+   mainLogger.debug("Adding links to inventory")
+
+   for entry in output_data['nodes']:
+      for node in entry:
+
+         if node in edgeList:
+            entry[node]['neighbors'] = deepcopy(edgeList[node])
+
+
    print('READY')
 
 
