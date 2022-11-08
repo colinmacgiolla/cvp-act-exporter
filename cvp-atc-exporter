@@ -178,9 +178,15 @@ def main():
    fh.setLevel(logging.DEBUG)
    fh.setFormatter(logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
    mainLogger.addHandler(fh)
+   # Console logging
    ch = logging.StreamHandler(sys.stdout)
    ch.setLevel(logging.INFO)
    ch.setFormatter(logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+   # Dial the imports down
+   temp = logging.getLogger('urllib3.connectionpool')
+   temp.setLevel(logging.WARNING)
+   temp = logging.getLogger('cvprac')
+   temp.setLevel(logging.WARNING)
    mainLogger.addHandler(ch)
    mainLogger.propagate = False
 
@@ -298,10 +304,6 @@ def main():
    with open(args.output_file,'w') as output_file:
       temp = yaml.safe_dump(output_data, output_file, sort_keys=False)
    mainLogger.info('Export completed')
-
-
-
-
 
    return 0
 
