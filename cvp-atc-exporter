@@ -112,7 +112,7 @@ def generate_edges(raw_topology, serials):
 
 def main():
    
-   timestamp = time.strftime("%Y%m%d-%H%M%S")
+   timestamp = time.strftime("%Y%m%d-%H%M")
    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
    mainLogger = logging.getLogger('cvp-atc-exporter')
    # We append to the log if it already exists, if not create the file
@@ -129,11 +129,12 @@ def main():
 
    mainLogger.info('Script started')
 
-   mainLogger.info('Attempting to connect to CVP')
-   client = CvpClient()
-   client.connect(['10.83.13.33'], 'cvpadmin', 'arastra')
+
 
    if TEST_MODE is False:
+      mainLogger.info('Attempting to connect to CVP')
+      client = CvpClient()
+      client.connect(['10.83.13.33'], 'cvpadmin', 'arastra')
       mainLogger.info('Collecting CVP info')
       cvp_info = client.api.get_cvp_info()
       mainLogger.info('Collecting device inventory')
@@ -156,13 +157,17 @@ def main():
             outfile.write(json_object)
 
    else:
-      mainLogger.info('Running in test mode... Loading local files...')
-      with open('cvp.json','r') as openfile:
-         cvp_info = json.load(openfile)
-      with open('inventory.json','r') as openfile:
-         inventory = json.load(openfile)
-      with open('topology.json','r') as openfile:
-         raw_topology = json.load(openfile)         
+      try:
+         mainLogger.warning('Running in test mode... Loading local files...')
+         with open('cvp.json','r') as openfile:
+            cvp_info = json.load(openfile)
+         with open('inventory.json','r') as openfile:
+            inventory = json.load(openfile)
+         with open('topology.json','r') as openfile:
+            raw_topology = json.load(openfile)
+      except Exception as e:
+         mainLogger.error('Unable to open local data: %s', e)
+         return 1
 
 
    mainLogger.info("Building node list, and mapping hostname to serial numbers")
@@ -198,13 +203,15 @@ def main():
 
    for entry in output_data['nodes']:
       for node in entry:
-
          if node in edgeList:
             entry[node]['neighbors'] = deepcopy(edgeList[node])
+         else:
+            mainLogger.debug('%s has no links that we can find', node)
 
+   mainLogger.info('Writing output yaml')
    with open('generated_act_topology.yaml','w') as output_file:
-      temp = yaml.dump(output_data, output_file, sort_keys=False)
-   print('READY')
+      temp = yaml.safe_dump(output_data, output_file, sort_keys=False)
+   mainLogger.info('Export completed')
 
 
 
