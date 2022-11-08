@@ -44,8 +44,13 @@ class ipGenerator():
 
 
 def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
+   '''
+   Build a list of EOS nodes, based on the inputs
+      Parameters
+   '''
    nodeList = []
    serialTable = {}
+   blacklist = []
    
    node = {}
    for entry in inventory:
@@ -60,6 +65,7 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
       if streaming_active is True:
          if entry['streamingStatus'] != 'active':
             log.warning('Not creating %s as is not currently streaming', entry['hostname'])
+            blacklist.append(entry['hostname'])
          else:
             log.debug('Creating node: %s', entry['hostname'])
             nodeList.append(deepcopy(node))
@@ -69,10 +75,10 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
 
       serialTable[ entry['serialNumber'] ] = entry['hostname']
 
-   return nodeList,serialTable
+   return nodeList,serialTable,blacklist
 
 
-def generate_edges(raw_topology, serials, mgmt_ip, log):
+def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    edgeSet = {}
    extra_nodes = []
    node = {}
@@ -90,14 +96,16 @@ def generate_edges(raw_topology, serials, mgmt_ip, log):
             # Nothing to do, generic node already created
             pass
          else:
-            log.debug('Creating generic node for %s' % data[0])
-            
-            node[local_hostname] = {}
-            node[local_hostname]['ip_addr'] = mgmt_ip.get()
-            node[local_hostname]['node_type'] = 'generic'
-            node[local_hostname]['neighbors'] = []
-            extra_nodes.append(deepcopy(node))
-            node.clear()
+            if data[0] not in blacklist:
+               log.debug('Creating generic node for %s' % data[0])
+               node[local_hostname] = {}
+               node[local_hostname]['ip_addr'] = mgmt_ip.get()
+               node[local_hostname]['node_type'] = 'generic'
+               node[local_hostname]['neighbors'] = []
+               extra_nodes.append(deepcopy(node))
+               node.clear()
+            else:
+               log.debug('%s blacklisted - not creating', data[0])
 
          remote_hostname = data[2]
          if remote_hostname in serials:
@@ -107,15 +115,18 @@ def generate_edges(raw_topology, serials, mgmt_ip, log):
                # generic node has already been created
                pass
             else:
-               log.debug('Remote edge found before remote node creation %s %s - %s %s' % (data[0], data[1], data[2], data[3]))
-               log.debug("Creating generic node: %s" % data[2])
-               remote_hostname = data[2]
-               node[remote_hostname] = {}
-               node[remote_hostname]['ip_addr'] = mgmt_ip.get()
-               node[remote_hostname]['node_type'] = 'generic'
-               node[remote_hostname]['neighbors'] = []
-               extra_nodes.append(deepcopy(node))
-               node.clear()
+               log.debug('Remote edge found before local node creation %s %s - %s %s' % (data[0], data[1], data[2], data[3]))
+
+               if remote_hostname not in blacklist:
+                  log.debug("Creating generic node: %s" % data[2])
+                  node[remote_hostname] = {}
+                  node[remote_hostname]['ip_addr'] = mgmt_ip.get()
+                  node[remote_hostname]['node_type'] = 'generic'
+                  node[remote_hostname]['neighbors'] = []
+                  extra_nodes.append(deepcopy(node))
+                  node.clear()
+               else:
+                  log.debug('%s blacklisted - not creating', remote_hostname)
 
          if local_hostname not in edgeSet:
             edgeSet[local_hostname] = []
@@ -188,11 +199,11 @@ def main():
    mgmt_ip_block = ipGenerator()
 
    mainLogger.info("Building node list, and mapping hostname to serial numbers")
-   nodes,serialTable = build_node_list(inventory, mgmt_ip_block, mainLogger)
+   nodes,serialTable,blacklist = build_node_list(inventory, mgmt_ip_block, mainLogger)
    mainLogger.info("Successfully mapped %d nodes, and %d serial numbers", len(nodes), len(serialTable))
 
    mainLogger.info("Mapping links")
-   edgeList, genericNodes = generate_edges(raw_topology,serialTable, mgmt_ip_block, mainLogger)
+   edgeList, genericNodes = generate_edges(raw_topology,serialTable, mgmt_ip_block, mainLogger, blacklist=blacklist)
    mainLogger.info("Successfully mapped %d links, and found %d generic/not-in-inventory nodes", len(edgeList), len(genericNodes))
 
    mainLogger.info("Building final datastructure")
