@@ -23,6 +23,7 @@ urllib3.disable_warnings()
 import json
 from copy import deepcopy
 import ipaddress
+import yaml
 
 TEST_MODE = True
 EXPORT_CVP_DATA = True
@@ -201,7 +202,8 @@ def main():
          if node in edgeList:
             entry[node]['neighbors'] = deepcopy(edgeList[node])
 
-
+   with open('generated_act_topology.yaml','w') as output_file:
+      temp = yaml.dump(output_data, output_file, sort_keys=False)
    print('READY')
 
 
