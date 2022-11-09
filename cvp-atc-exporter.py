@@ -322,7 +322,7 @@ def main():
 
    mainLogger.info("Mapping links")
    edgeList, genericNodes = generate_edges(raw_topology,serialTable, mgmt_ip_block, mainLogger, blacklist=blacklist)
-   mainLogger.info("Successfully mapped %d links, and found %d generic/not-in-inventory nodes", len(edgeList), len(genericNodes))
+   mainLogger.info("Successfully mapped %d links, and found %d generic/not-in-inventory nodes",  sum([len(element) for element in edgeList]), len(genericNodes))
 
    mainLogger.info("Building final datastructure")
    mainLogger.debug("Creating CVP header")
