@@ -1,0 +1,239 @@
+cvp:
+  username: root
+  password: cvproot
+  version: 2022.2.0
+  instance: singleinstance
+generic:
+  version: CentOS-8-8.2.2004
+  username: ansible
+  password: ansible
+nodes:
+- host1:
+    ip_addr: 192.168.0.6
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: leaf1
+      neighborPort: Ethernet4
+      port: Ethernet1
+    - neighborDevice: leaf1
+      neighborPort: Ethernet5
+      port: Ethernet3
+    - neighborDevice: leaf2
+      neighborPort: Ethernet4
+      port: Ethernet2
+    - neighborDevice: leaf2
+      neighborPort: Ethernet5
+      port: Ethernet4
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- host2:
+    ip_addr: 192.168.0.7
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: leaf3
+      neighborPort: Ethernet4
+      port: Ethernet1
+    - neighborDevice: leaf3
+      neighborPort: Ethernet5
+      port: Ethernet3
+    - neighborDevice: leaf4
+      neighborPort: Ethernet4
+      port: Ethernet2
+    - neighborDevice: leaf4
+      neighborPort: Ethernet5
+      port: Ethernet4
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- leaf1:
+    ip_addr: 192.168.0.8
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: host1
+      neighborPort: Ethernet1
+      port: Ethernet4
+    - neighborDevice: host1
+      neighborPort: Ethernet3
+      port: Ethernet5
+    - neighborDevice: leaf2
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: leaf2
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: spine1
+      neighborPort: Ethernet2
+      port: Ethernet2
+    - neighborDevice: spine2
+      neighborPort: Ethernet2
+      port: Ethernet3
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- leaf4:
+    ip_addr: 192.168.0.9
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: host2
+      neighborPort: Ethernet2
+      port: Ethernet4
+    - neighborDevice: host2
+      neighborPort: Ethernet4
+      port: Ethernet5
+    - neighborDevice: leaf3
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: leaf3
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: spine1
+      neighborPort: Ethernet5
+      port: Ethernet2
+    - neighborDevice: spine2
+      neighborPort: Ethernet5
+      port: Ethernet3
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- spine1:
+    ip_addr: 192.168.0.10
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: leaf1
+      neighborPort: Ethernet2
+      port: Ethernet2
+    - neighborDevice: leaf2
+      neighborPort: Ethernet2
+      port: Ethernet3
+    - neighborDevice: leaf3
+      neighborPort: Ethernet2
+      port: Ethernet4
+    - neighborDevice: leaf4
+      neighborPort: Ethernet2
+      port: Ethernet5
+    - neighborDevice: spine2
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: spine2
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- leaf2:
+    ip_addr: 192.168.0.11
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: host1
+      neighborPort: Ethernet2
+      port: Ethernet4
+    - neighborDevice: host1
+      neighborPort: Ethernet4
+      port: Ethernet5
+    - neighborDevice: leaf1
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: leaf1
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: spine1
+      neighborPort: Ethernet3
+      port: Ethernet2
+    - neighborDevice: spine2
+      neighborPort: Ethernet3
+      port: Ethernet3
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- spine2:
+    ip_addr: 192.168.0.12
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: leaf1
+      neighborPort: Ethernet3
+      port: Ethernet2
+    - neighborDevice: leaf2
+      neighborPort: Ethernet3
+      port: Ethernet3
+    - neighborDevice: leaf3
+      neighborPort: Ethernet3
+      port: Ethernet4
+    - neighborDevice: leaf4
+      neighborPort: Ethernet3
+      port: Ethernet5
+    - neighborDevice: spine1
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: spine1
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- cvx01:
+    ip_addr: 192.168.0.13
+    node_type: veos
+    version: 4.27.2F
+    neighbors: []
+- leaf3:
+    ip_addr: 192.168.0.14
+    node_type: veos
+    version: 4.27.2F
+    neighbors:
+    - neighborDevice: host2
+      neighborPort: Ethernet1
+      port: Ethernet4
+    - neighborDevice: host2
+      neighborPort: Ethernet3
+      port: Ethernet5
+    - neighborDevice: leaf4
+      neighborPort: Ethernet1
+      port: Ethernet1
+    - neighborDevice: leaf4
+      neighborPort: Ethernet6
+      port: Ethernet6
+    - neighborDevice: spine1
+      neighborPort: Ethernet4
+      port: Ethernet2
+    - neighborDevice: spine2
+      neighborPort: Ethernet4
+      port: Ethernet3
+    - neighborDevice: cvp1
+      neighborPort: Management0
+      port: Management1
+- cvp1:
+    ip_addr: 192.168.0.5
+    node_type: cvp
+    neighbors:
+    - neighborDevice: host1
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: host2
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: leaf1
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: leaf4
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: spine1
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: leaf2
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: spine2
+      neighborPort: Management1
+      port: Management0
+    - neighborDevice: leaf3
+      neighborPort: Management1
+      port: Management0
