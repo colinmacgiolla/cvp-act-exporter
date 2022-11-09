@@ -207,9 +207,14 @@ def build_output(cvp_version, log):
    
    
    output_data['generic'] = {}
-   output_data['generic']['version'] = 'CentOS-8-8.2.2004'
+   output_data['generic']['version'] = 'CentOS-7.9.2009'
    output_data['generic']['username'] = 'ansible'
    output_data['generic']['password'] = 'ansible'
+
+   output_data['veos'] = {}
+   output_data['veos']['username'] = 'arista'
+   output_data['veos']['password'] = 'arista'
+   output_data['veos']['version'] = '4.25.0F'
 
    return output_data
 
