@@ -124,56 +124,67 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    edgeSet = {}
    extra_nodes = []
    node = {}
+   _temp_edges = []
 
    for notification in raw_topology['notifications']:
       for entry in notification['updates']:
+         sideA = notification['updates'][entry]['key']['from']
+         sideB = notification['updates'][entry]['key']['to']
+         
+         for sideA_interface in notification['updates'][entry]['value'].keys():
+            for element in notification['updates'][entry]['value'][sideA_interface]:
+               sideB_interface = notification['updates'][entry]['value'][sideA_interface][element]['key']['neighborPort']
+               # ATC takes a node centric view so the edges need to be configured on both nodes
+               _temp_edges.append( (sideA, sideA_interface, sideB, sideB_interface) )
+               # We handle this by creating the edges in pairs
+               _temp_edges.append( (sideB, sideB_interface, sideA, sideA_interface) )
 
-         # Assume this to be local serial,local interface, remote serial, remote port
-         data = entry.split(',')
 
-         local_hostname = data[0]
-         if local_hostname in serials:
-            local_hostname = serials[data[0]]
-         elif any(remote_hostname in x for x in extra_nodes):
-            # Nothing to do, generic node already created
-            pass
+   log.debug("%d edges mapped", len(_temp_edges)/2)
+
+   for entry in _temp_edges:
+      
+
+      if entry[0] in serials:
+         local_hostname = serials[entry[0]]
+      elif any(local_hostname in x for x in extra_nodes):
+         pass
+      else:
+         if local_hostname not in blacklist:
+            log.debug('Creating generic node for %s' % entry[0])
+            node[local_hostname] = {}
+            node[local_hostname]['ip_addr'] = mgmt_ip.get()
+            node[local_hostname]['node_type'] = 'generic'
+            node[local_hostname]['neighbors'] = []
+            extra_nodes.append(deepcopy(node))
+            node.clear()
          else:
-            if data[0] not in blacklist:
-               log.debug('Creating generic node for %s' % data[0])
-               node[local_hostname] = {}
-               node[local_hostname]['ip_addr'] = mgmt_ip.get()
-               node[local_hostname]['node_type'] = 'generic'
-               node[local_hostname]['neighbors'] = []
-               extra_nodes.append(deepcopy(node))
-               node.clear()
-            else:
-               log.debug('%s blacklisted - not creating', data[0])
+            log.debug('%s blacklisted - not creating', local_hostname)     
 
-         remote_hostname = data[2]
-         if remote_hostname in serials:
-            remote_hostname = serials[data[2]]
+
+      remote_hostname = entry[2]
+      if remote_hostname in serials:
+         # Remote hostname is in CVP inventory
+         remote_hostname = serials[entry[2]]
+      elif any(remote_hostname in x for x in extra_nodes):
+         # Generic node already created
+         pass
+      else:
+         if remote_hostname not in blacklist:
+            log.debug("Creating generic node: %s" % entry[2])
+            node[remote_hostname] = {}
+            node[remote_hostname]['ip_addr'] = mgmt_ip.get()
+            node[remote_hostname]['node_type'] = 'generic'
+            node[remote_hostname]['neighbors'] = []
+            extra_nodes.append(deepcopy(node))
+            node.clear()
          else:
-            if any(remote_hostname in x for x in extra_nodes):
-               # generic node has already been created
-               pass
-            else:
-               log.debug('Remote edge found before local node creation %s %s - %s %s' % (data[0], data[1], data[2], data[3]))
+            log.debug('%s blacklisted - not creating', remote_hostname)
 
-               if remote_hostname not in blacklist:
-                  log.debug("Creating generic node: %s" % data[2])
-                  node[remote_hostname] = {}
-                  node[remote_hostname]['ip_addr'] = mgmt_ip.get()
-                  node[remote_hostname]['node_type'] = 'generic'
-                  node[remote_hostname]['neighbors'] = []
-                  extra_nodes.append(deepcopy(node))
-                  node.clear()
-               else:
-                  log.debug('%s blacklisted - not creating', remote_hostname)
+      if local_hostname not in edgeSet:
+         edgeSet[local_hostname] = []
 
-         if local_hostname not in edgeSet:
-            edgeSet[local_hostname] = []
-
-         edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':data[3],'port':data[1]  }   )
+      edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':entry[3],'port':entry[1]  }   )
 
    return edgeSet, extra_nodes
 
@@ -268,7 +279,7 @@ def main():
       mainLogger.info('Collecting device inventory')
       inventory = client.api.get_inventory()
       mainLogger.info('Collecting link topologies')
-      raw_topology = client.get('/api/v1/rest/analytics/network/v1/connections/links')
+      raw_topology = client.get('/api/v1/rest/analytics/network/v1/topology/edges')
 
       if EXPORT_CVP_DATA is True:
          mainLogger.info('Exporting collected data to json')
