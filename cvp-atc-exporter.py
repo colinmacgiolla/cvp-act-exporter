@@ -343,7 +343,6 @@ def main():
    cvp1['cvp1'] = {}
    cvp1['cvp1']['ip_addr'] = '192.168.0.5'
    cvp1['cvp1']['node_type'] = 'cvp'
-   cvp1['cvp1']['neighbors'] = []
    output_data['nodes'].append(cvp1)
 
    mainLogger.debug("Adding links to inventory")
@@ -353,10 +352,6 @@ def main():
          if node != 'cvp1':
             if node in edgeList:
                entry[node]['neighbors'] = deepcopy(edgeList[node])
-               # Inject CVP link
-               entry[node]['neighbors'].append( {'neighborDevice':'cvp1','neighborPort':'Management0','port':'Management1' } )
-               # CVP1 is the last added node
-               output_data['nodes'][-1]['cvp1']['neighbors'].append( {'neighborDevice':node,'neighborPort':'Management1','port':'Management0' } )
             else:
                mainLogger.debug('%s has no links that we can find', node)
          else:
