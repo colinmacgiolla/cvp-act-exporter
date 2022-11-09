@@ -73,6 +73,6 @@ nodes:
 * A single CVP instance is assumed
 
 # TODO
-* Generate the CVP connectivity
-* Check exactly the reserved IPs within ATC managemnet network that are in use for services
-* Remap interfaces until ACT supports `Arbitrary Interface Mapping on vEOS & cEOS - RFE 552331`
+- [x] Generate the CVP connectivity
+- [ ] Check exactly the reserved IPs within ATC managemnet network that are in use for services
+- [ ] Remap interfaces until ACT supports `Arbitrary Interface Mapping on vEOS & cEOS - RFE 552331`
