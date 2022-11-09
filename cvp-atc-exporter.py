@@ -189,12 +189,16 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    return edgeSet, extra_nodes
 
 
-def build_output(cvp_version):
+def build_output(cvp_version, log):
    output_data = {}
    output_data['cvp'] = {}
    output_data['cvp']['username'] = 'root'
    output_data['cvp']['password'] = 'cvproot'
-   output_data['cvp']['version'] = cvp_version
+   if cvp_version == 'cvass':
+      output_data['cvp']['version'] = '2022.2.0'
+      log.warning('You are exporting from CVaaS - setting CVP version to: %s', output_data['cvp']['version'] )
+   else:
+      output_data['cvp']['version'] = cvp_version
    output_data['cvp']['instance'] = 'singleinstance'
    
    
@@ -321,7 +325,7 @@ def main():
 
    mainLogger.info("Building final datastructure")
    mainLogger.debug("Creating CVP header")
-   output_data = build_output(cvp_info['version'])
+   output_data = build_output(cvp_info['version'], mainLogger)
 
 
    mainLogger.debug("Populating node list")
