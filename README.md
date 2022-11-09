@@ -31,6 +31,9 @@ Script arguments:
 ```
 
 ### Sample Output
+
+Full sample is available [here](./example_output/generated_act_topology.yaml)
+
 ```yaml
 cvp:
   username: root
