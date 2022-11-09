@@ -2,7 +2,7 @@ cvp:
   username: root
   password: cvproot
   version: 2022.2.0
-  instance: singleinstance
+  instance: singlenode
 generic:
   version: CentOS-8-8.2.2004
   username: ansible
@@ -157,11 +157,6 @@ nodes:
     - neighborDevice: spine1
       neighborPort: Ethernet6
       port: Ethernet6
-- cvx01:
-    ip_addr: 192.168.0.13
-    node_type: veos
-    version: 4.27.2F
-    neighbors: []
 - leaf3:
     ip_addr: 192.168.0.14
     node_type: veos

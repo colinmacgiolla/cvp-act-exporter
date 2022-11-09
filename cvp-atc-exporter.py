@@ -203,7 +203,7 @@ def build_output(cvp_version, log):
       log.warning('You are exporting from CVaaS - setting CVP version to: %s', output_data['cvp']['version'] )
    else:
       output_data['cvp']['version'] = cvp_version
-   output_data['cvp']['instance'] = 'singleinstance'
+   output_data['cvp']['instance'] = 'singlenode'
    
    
    output_data['generic'] = {}
