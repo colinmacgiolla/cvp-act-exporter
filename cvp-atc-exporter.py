@@ -4,12 +4,12 @@
 
 # Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 # * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright notice,  this list of conditions and the following disclaimer in the documentation
+# * Redistributions in binary form must reproduce the above copyright notice,  this list of conditions and the following disclaimer in the documentation 
 #   and/or other materials provided with the distribution.
-# * Neither the name of the Arista nor the names of its contributors may be used to endorse or promote products derived from this software without
+# * Neither the name of the Arista nor the names of its contributors may be used to endorse or promote products derived from this software without 
 #   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
 # THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
 # BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
 # GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
@@ -43,7 +43,7 @@ class ipGenerator():
       Methods:
          get(): Get an un-allocated IP
          put(str): Put an IP back in the pool
-
+   
    '''
    def __init__(self,subnet="192.168.0.0/24",num_reserved=5):
       self.ip_block = [str(ip) for ip in ipaddress.IPv4Network(subnet)]
@@ -54,7 +54,7 @@ class ipGenerator():
 
    def get(self):
       return self.ip_block.pop()
-
+   
    def put(self, ip):
       self.ip_block.append(ip)
 
@@ -68,7 +68,7 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
          inventory (list): CVP inventory output - a list of dicts containing the standard CVP inventory
          mgmt_ip (ipGenerator): An instance of the ipGenerator class to provide the updated management IPs
          log (logging): Instance of the logger
-         streaming_active (bool): Filter out any nodes that aren't actively streaming. Non CVP nodes will still be
+         streaming_active (bool): Filter out any nodes that aren't actively streaming. Non CVP nodes will still be 
             generated as generic types if the topology requires it
 
       Returns:
@@ -77,7 +77,7 @@ def build_node_list(inventory, mgmt_ip, log, streaming_active=False):
    nodeList = []
    serialTable = {}
    blacklist = []
-
+   
    node = {}
    for entry in inventory:
       log.debug('Processing %s', entry['hostname'])
@@ -115,11 +115,11 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
          mgmt_ip (ipGenerator): the instance of the ipGenerator for the management pool
          log(logging): logging instance
          blackkist(list(str)): list of nodes that are in the CVP inventory, but whose presence we don't need to infer
-
+      
       Returns:
          edgeSet(list): A list of neighbors with the link information
          extra_nodes(list): A list of generic nodes that are inferred from the link information
-
+   
    '''
    edgeSet = {}
    extra_nodes = []
@@ -130,7 +130,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
       for entry in notification['updates']:
          sideA = notification['updates'][entry]['key']['from']
          sideB = notification['updates'][entry]['key']['to']
-
+         
          for sideA_interface in notification['updates'][entry]['value'].keys():
             for element in notification['updates'][entry]['value'][sideA_interface]:
                sideB_interface = notification['updates'][entry]['value'][sideA_interface][element]['key']['neighborPort']
@@ -143,7 +143,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    log.debug("%d edges mapped", len(_temp_edges)/2)
 
    for entry in _temp_edges:
-
+      
       if 'Vxlan1' not in entry:
 
          local_hostname = entry[0]
@@ -161,7 +161,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                extra_nodes.append(deepcopy(node))
                node.clear()
             else:
-               log.debug('%s blacklisted - not creating', local_hostname)
+               log.debug('%s blacklisted - not creating', local_hostname)     
 
 
          remote_hostname = entry[2]
@@ -182,16 +182,13 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                node.clear()
             else:
                log.debug('%s blacklisted - not creating', remote_hostname)
-
-
-         if local_hostname not in edgeSet:
-            edgeSet[local_hostname] = []
-         edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':entry[3],'port':entry[1]  }   )
-
       else:
-         log.debug('Skipping Vxlan1 interface on %s', entry[0])
+         log.debug('Skipping VX')
 
+      if local_hostname not in edgeSet:
+         edgeSet[local_hostname] = []
 
+      edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':entry[3],'port':entry[1]  }   )
 
    return edgeSet, extra_nodes
 
@@ -207,8 +204,8 @@ def build_output(cvp_version, log):
    else:
       output_data['cvp']['version'] = cvp_version
    output_data['cvp']['instance'] = 'singleinstance'
-
-
+   
+   
    output_data['generic'] = {}
    output_data['generic']['version'] = 'CentOS-8-8.2.2004'
    output_data['generic']['username'] = 'ansible'
@@ -218,7 +215,7 @@ def build_output(cvp_version, log):
 
 
 def main():
-
+   
    timestamp = time.strftime("%Y%m%d-%H%M")
    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
    mainLogger = logging.getLogger('cvp-atc-exporter')
@@ -246,15 +243,15 @@ def main():
    parser = argparse.ArgumentParser(prog='CVP to ATC Exporter',
       description='This script exports the nodes, links and version information from CVP into a YAML file for import to Arista Cloud Test')
 
-   parser.add_argument('-t','--test', action='store_true', default=False,
+   parser.add_argument('-t','--test', action='store_true', default=False, 
       help='If --test is set, we will not connect to CVP but instead try and use local json files as our source data. Disabled by default.')
-   parser.add_argument('--export', action='store_true', default=False,
+   parser.add_argument('--export', action='store_true', default=False, 
       help='Store the responses from CVP as json data locally, for later testing. Disabled by default.')
-   parser.add_argument('-o', '--output', default='generated_act_topology.yaml',
+   parser.add_argument('-o', '--output', default='generated_act_topology.yaml', 
       help='Output file name, default is: generated_act_topology.yaml',dest='output_file')
-   parser.add_argument('--streaming', action='store_true', default=False,
+   parser.add_argument('--streaming', action='store_true', default=False, 
       help='Only add nodes that are actively streaming from the CVP inventory. Any nodes (and their links) that are not streaming, will not be created. Disabled by default.')
-   parser.add_argument('--create-generic', action='store_true', default=True,
+   parser.add_argument('--create-generic', action='store_true', default=True, 
       help='If there are non-CVP nodes whose presence is inferred from the link data, create them as generic linux hosts. *Enabled* by default')
    parser_group = parser.add_mutually_exclusive_group(required=True)
    parser_group.add_argument('-u', '--username', help='username if using on-prem user accounts',dest='username')
@@ -341,14 +338,29 @@ def main():
       mainLogger.info("Adding generic nodes to inventory")
       output_data['nodes'].extend( deepcopy(genericNodes))
 
+   # Insert CVP1
+   cvp1 = {}
+   cvp1['cvp1'] = {}
+   cvp1['cvp1']['ip_addr'] = '192.168.0.5'
+   cvp1['cvp1']['node_type'] = 'cvp'
+   cvp1['cvp1']['neighbors'] = []
+   output_data['nodes'].append(cvp1)
+
    mainLogger.debug("Adding links to inventory")
 
    for entry in output_data['nodes']:
       for node in entry:
-         if node in edgeList:
-            entry[node]['neighbors'] = deepcopy(edgeList[node])
+         if node != 'cvp1':
+            if node in edgeList:
+               entry[node]['neighbors'] = deepcopy(edgeList[node])
+               # Inject CVP link
+               entry[node]['neighbors'].append( {'neighborDevice':'cvp1','neighborPort':'Management0','port':'Management1' } )
+               # CVP1 is the last added node
+               output_data['nodes'][-1]['cvp1']['neighbors'].append( {'neighborDevice':node,'neighborPort':'Management1','port':'Management0' } )
+            else:
+               mainLogger.debug('%s has no links that we can find', node)
          else:
-            mainLogger.debug('%s has no links that we can find', node)
+            mainLogger.debug('CVP1 statically generated')
 
    mainLogger.info('Writing output yaml')
    with open(args.output_file,'w') as output_file:
