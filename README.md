@@ -70,7 +70,9 @@ nodes:
 ## Caveats (READ THIS SECTION)
 * The management IPs are updated to match the pool required within Arista Test Cloud [ATC] (192.168.0.0/24)
 * QSFP, broken out ports, or Modular system ports e.g. `Ethernet25/1`, `Ethernet6/23/1` are not remapped to flat interfaces e.g. `Ethernet55`
+* A single CVP instance is assumed
 
 # TODO
+* Generate the CVP connectivity
 * Check exactly the reserved IPs within ATC managemnet network that are in use for services
 * Remap interfaces until ACT supports `Arbitrary Interface Mapping on vEOS & cEOS - RFE 552331`
