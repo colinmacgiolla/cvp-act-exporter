@@ -145,6 +145,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    for entry in _temp_edges:
       
 
+      local_hostname = entry[0]
       if entry[0] in serials:
          local_hostname = serials[entry[0]]
       elif any(local_hostname in x for x in extra_nodes):
@@ -194,7 +195,7 @@ def build_output(cvp_version, log):
    output_data['cvp'] = {}
    output_data['cvp']['username'] = 'root'
    output_data['cvp']['password'] = 'cvproot'
-   if cvp_version == 'cvass':
+   if cvp_version == 'cvaas':
       output_data['cvp']['version'] = '2022.2.0'
       log.warning('You are exporting from CVaaS - setting CVP version to: %s', output_data['cvp']['version'] )
    else:
