@@ -25,9 +25,6 @@ nodes:
     - neighborDevice: leaf2
       neighborPort: Ethernet5
       port: Ethernet4
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - host2:
     ip_addr: 192.168.0.7
     node_type: veos
@@ -45,9 +42,6 @@ nodes:
     - neighborDevice: leaf4
       neighborPort: Ethernet5
       port: Ethernet4
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - leaf1:
     ip_addr: 192.168.0.8
     node_type: veos
@@ -71,9 +65,6 @@ nodes:
     - neighborDevice: spine2
       neighborPort: Ethernet2
       port: Ethernet3
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - leaf4:
     ip_addr: 192.168.0.9
     node_type: veos
@@ -97,9 +88,6 @@ nodes:
     - neighborDevice: spine2
       neighborPort: Ethernet5
       port: Ethernet3
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - spine1:
     ip_addr: 192.168.0.10
     node_type: veos
@@ -123,9 +111,6 @@ nodes:
     - neighborDevice: spine2
       neighborPort: Ethernet6
       port: Ethernet6
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - leaf2:
     ip_addr: 192.168.0.11
     node_type: veos
@@ -149,9 +134,6 @@ nodes:
     - neighborDevice: spine2
       neighborPort: Ethernet3
       port: Ethernet3
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - spine2:
     ip_addr: 192.168.0.12
     node_type: veos
@@ -175,9 +157,6 @@ nodes:
     - neighborDevice: spine1
       neighborPort: Ethernet6
       port: Ethernet6
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - cvx01:
     ip_addr: 192.168.0.13
     node_type: veos
@@ -206,34 +185,6 @@ nodes:
     - neighborDevice: spine2
       neighborPort: Ethernet4
       port: Ethernet3
-    - neighborDevice: cvp1
-      neighborPort: Management0
-      port: Management1
 - cvp1:
     ip_addr: 192.168.0.5
     node_type: cvp
-    neighbors:
-    - neighborDevice: host1
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: host2
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: leaf1
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: leaf4
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: spine1
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: leaf2
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: spine2
-      neighborPort: Management1
-      port: Management0
-    - neighborDevice: leaf3
-      neighborPort: Management1
-      port: Management0
