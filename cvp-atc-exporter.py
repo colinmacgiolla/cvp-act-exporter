@@ -26,7 +26,7 @@ import ipaddress
 import yaml
 from getpass import getpass
 
-TEST_MODE = True
+TEST_MODE = False
 EXPORT_CVP_DATA = True
 GENERATE_GENERIC = True
 
