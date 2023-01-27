@@ -28,7 +28,7 @@ from getpass import getpass
 
 TEST_MODE = False
 EXPORT_CVP_DATA = True
-GENERATE_GENERIC = True
+GENERATE_GENERIC = False
 
 
 class ipGenerator():
@@ -125,6 +125,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    extra_nodes = []
    node = {}
    _temp_edges = []
+   global GENERATE_GENERIC
 
    for notification in raw_topology['notifications']:
       for entry in notification['updates']:
@@ -171,7 +172,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
          elif any(remote_hostname in x for x in extra_nodes):
             # Generic node already created
             pass
-         else:
+         elif GENERATE_GENERIC:
             if remote_hostname not in blacklist:
                log.debug("Creating generic node: %s" % entry[2])
                node[remote_hostname] = {}
