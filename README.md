@@ -21,7 +21,7 @@ Script arguments:
   --streaming           Only add nodes that are actively streaming from the CVP inventory. Any nodes (and their links)
                         that are not streaming, will not be created. Disabled by default.
   --create-generic      If there are non-CVP nodes whose presence is inferred from the link data, create them as
-                        generic linux hosts. *Enabled* by default
+                        generic linux hosts. Disabled by default
   -u USERNAME, --username USERNAME
                         username if using on-prem user accounts
   --token TOKEN         API token, required if on CVaaS
