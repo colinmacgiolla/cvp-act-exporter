@@ -144,6 +144,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    log.debug("%d edges mapped", len(_temp_edges)/2)
 
    for entry in _temp_edges:
+      create_edge = True
       
       if 'Vxlan1' not in entry:
 
@@ -153,7 +154,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
          elif any(local_hostname in x for x in extra_nodes):
             pass
          else:
-            if local_hostname not in blacklist:
+            if local_hostname not in blacklist and GENERATE_GENERIC:
                log.debug('Creating generic node for %s' % entry[0])
                node[local_hostname] = {}
                node[local_hostname]['ip_addr'] = mgmt_ip.get()
@@ -162,7 +163,8 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                extra_nodes.append(deepcopy(node))
                node.clear()
             else:
-               log.debug('%s blacklisted - not creating', local_hostname)     
+               log.debug('%s blacklisted - not creating', local_hostname) 
+               create_edge = False    
 
 
          remote_hostname = entry[2]
@@ -172,8 +174,8 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
          elif any(remote_hostname in x for x in extra_nodes):
             # Generic node already created
             pass
-         elif GENERATE_GENERIC:
-            if remote_hostname not in blacklist:
+         else:
+            if remote_hostname not in blacklist and GENERATE_GENERIC:
                log.debug("Creating generic node: %s" % entry[2])
                node[remote_hostname] = {}
                node[remote_hostname]['ip_addr'] = mgmt_ip.get()
@@ -183,13 +185,16 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                node.clear()
             else:
                log.debug('%s blacklisted - not creating', remote_hostname)
+               create_edge = False
       else:
          log.debug('Skipping VX')
+         create_edge = False
 
-      if local_hostname not in edgeSet:
-         edgeSet[local_hostname] = []
+      if create_edge:
+         if local_hostname not in edgeSet:
+            edgeSet[local_hostname] = []
 
-      edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':entry[3],'port':entry[1]  }   )
+         edgeSet[ local_hostname ].append( {'neighborDevice':remote_hostname,'neighborPort':entry[3],'port':entry[1]  }   )
 
    return edgeSet, extra_nodes
 
@@ -328,6 +333,7 @@ def main():
    mainLogger.info("Building node list, and mapping hostname to serial numbers")
    nodes,serialTable,blacklist = build_node_list(inventory, mgmt_ip_block, mainLogger, streaming_active=args.streaming)
    mainLogger.info("Successfully mapped %d nodes, and %d serial numbers", len(nodes), len(serialTable))
+   mainLogger.debug("Blacklisting %s nodes" % len(blacklist) )
 
    mainLogger.info("Mapping links")
    edgeList, genericNodes = generate_edges(raw_topology,serialTable, mgmt_ip_block, mainLogger, blacklist=blacklist)
