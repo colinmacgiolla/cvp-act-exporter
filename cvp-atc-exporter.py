@@ -49,7 +49,7 @@ class ipGenerator():
       self.ip_block = [str(ip) for ip in ipaddress.IPv4Network(subnet)]
       self.ip_block.reverse()
 
-      for x in range(num_reserved+1):
+      for _ in range(num_reserved+1):
          self.ip_block.pop()
 
    def get(self):
@@ -264,7 +264,7 @@ def main():
    parser.add_argument('--streaming', action='store_true', default=False, 
       help='Only add nodes that are actively streaming from the CVP inventory. Any nodes (and their links) that are not streaming, will not be created. Disabled by default.')
    parser.add_argument('--create-generic', action='store_true', default=False, 
-      help='If there are non-CVP nodes whose presence is inferred from the link data, create them as generic linux hosts. *Enabled* by default')
+      help='If there are non-CVP nodes whose presence is inferred from the link data, create them as generic linux hosts. Dinabled by default')
    parser_group = parser.add_mutually_exclusive_group(required=True)
    parser_group.add_argument('-u', '--username', help='username if using on-prem user accounts',dest='username')
    parser_group.add_argument('--token', help='API token, required if on CVaaS', dest='token')
@@ -360,11 +360,13 @@ def main():
 
    mainLogger.debug("Adding links to inventory")
 
+   sum_edges = 0
    for entry in output_data['nodes']:
       for node in entry:
          if node != 'cvp1':
             if node in edgeList:
                entry[node]['neighbors'] = deepcopy(edgeList[node])
+               sum_edges += len(edgeList[node])
             else:
                mainLogger.debug('%s has no links that we can find', node)
          else:
@@ -373,6 +375,7 @@ def main():
    mainLogger.info('Writing output yaml')
    with open(args.output_file,'w') as output_file:
       temp = yaml.safe_dump(output_data, output_file, sort_keys=False)
+   mainLogger.info("Generated %d nodes, with %d edges." % (len(output_data['nodes']), sum_edges) )
    mainLogger.info('Export completed')
 
    return 0
