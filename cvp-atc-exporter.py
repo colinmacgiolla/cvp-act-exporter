@@ -256,7 +256,7 @@ def main():
       help='Output file name, default is: generated_act_topology.yaml',dest='output_file')
    parser.add_argument('--streaming', action='store_true', default=False, 
       help='Only add nodes that are actively streaming from the CVP inventory. Any nodes (and their links) that are not streaming, will not be created. Disabled by default.')
-   parser.add_argument('--create-generic', action='store_true', default=True, 
+   parser.add_argument('--create-generic', action='store_true', default=False, 
       help='If there are non-CVP nodes whose presence is inferred from the link data, create them as generic linux hosts. *Enabled* by default')
    parser_group = parser.add_mutually_exclusive_group(required=True)
    parser_group.add_argument('-u', '--username', help='username if using on-prem user accounts',dest='username')
