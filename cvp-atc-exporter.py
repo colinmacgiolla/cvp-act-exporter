@@ -144,6 +144,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
    log.debug("%d edges mapped", len(_temp_edges)/2)
 
    for entry in _temp_edges:
+      # This is a guard against creating nodes, or links to nodes that we don't want created
       create_edge = True
       
       if 'Vxlan1' not in entry:
@@ -163,7 +164,7 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                extra_nodes.append(deepcopy(node))
                node.clear()
             else:
-               log.debug('%s blacklisted - not creating', local_hostname) 
+               log.debug('Generic peer - not creating %s\t%s' % (local_hostname, entry[1])) 
                create_edge = False    
 
 
@@ -184,10 +185,10 @@ def generate_edges(raw_topology, serials, mgmt_ip, log, blacklist=[]):
                extra_nodes.append(deepcopy(node))
                node.clear()
             else:
-               log.debug('%s blacklisted - not creating', remote_hostname)
+               log.debug('Generic peer - not creating %s\t%s' % (remote_hostname, entry[3]))
                create_edge = False
       else:
-         log.debug('Skipping VX')
+         log.debug('Skipping VX hosts')
          create_edge = False
 
       if create_edge:
