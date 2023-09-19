@@ -1,5 +1,5 @@
-# CloudVision Portal to Arista Test Cloud Exporter
-This script allows your topology and node information to exported from either an on-prem or CVaaS instance of CloudVision Portal to a YAML file that can be imported into Arista Test Cloud.
+# CloudVision Portal to Arista Cloud TestExporter
+This script allows your topology and node information to exported from either an on-prem or CVaaS instance of CloudVision Portal to a YAML file that can be imported into Arista Cloud Test.
 
 The generated topology file will match the CVP release to that of the cvp release it was exported from. Likewise the software release will be matched per node.
 
